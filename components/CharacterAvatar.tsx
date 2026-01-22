@@ -12,13 +12,14 @@ interface CharacterAvatarProps {
 export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({ mode, size = 'md', className = '' }) => {
   const isInitial = mode === AppMode.INITIAL;
 
-  // 画面中央に大きく配置するため、サイズをさらに調整
+  // 初期は3匹並んでいるので横長、モード中は1匹なので正方形に近いサイズ
   const sizeStyles = {
-    sm: isInitial ? 'w-24 h-12' : 'w-20 h-20',
-    md: isInitial ? 'w-48 h-24' : 'w-40 h-40',
-    lg: isInitial ? 'w-80 h-40' : 'w-80 h-80'
+    sm: isInitial ? 'w-32 h-16' : 'w-16 h-16',
+    md: isInitial ? 'w-64 h-32' : 'w-40 h-40',
+    lg: isInitial ? 'w-[450px] h-[225px]' : 'w-80 h-80'
   }[size];
 
+  // 画像内の位置指定 (左:かんがろう, 中:おもこ, 右:やるきち)
   const bgPos = {
     [AppMode.REFLECT]: '0% center',   // かんがろう (左)
     [AppMode.TRAINING]: '50% center',  // おもこ (中)
@@ -27,37 +28,49 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({ mode, size = '
   }[mode];
 
   const themeColor = isInitial ? '#ffffff' : 
-    mode === AppMode.REFLECT ? '#3b82f6' : 
-    mode === AppMode.TRAINING ? '#ec4899' : '#f97316';
+    mode === AppMode.REFLECT ? '#4a90e2' : 
+    mode === AppMode.TRAINING ? '#f06292' : '#ff9800';
 
   return (
-    <div className={`relative transition-all duration-1000 ${className}`}>
-      {/* 1. Base Ambient Glow */}
+    <div className={`relative transition-all duration-1000 ease-out ${className} flex items-center justify-center`}>
+      {/* 1. 背後のオーラ */}
       <div 
-        className="absolute inset-0 rounded-full opacity-20 blur-[60px] animate-pulse transition-all duration-1000"
-        style={{ backgroundColor: themeColor, transform: isInitial ? 'scale(1.4, 1.0)' : 'scale(1.8)' }}
+        className="absolute rounded-full opacity-20 blur-[80px] animate-pulse transition-all duration-1000"
+        style={{ 
+          backgroundColor: themeColor, 
+          width: isInitial ? '120%' : '140%', 
+          height: '100%',
+          transform: 'scale(1.2)'
+        }}
       />
       
-      {/* 2. Character Image */}
+      {/* 2. キャラクター本体 */}
       <div 
-        className={`${sizeStyles} transition-all duration-1000 border-2 border-white/5 shadow-[0_0_80px_rgba(255,255,255,0.05)] overflow-hidden bg-white/[0.02] relative z-10 ${isInitial ? 'rounded-[3rem]' : 'rounded-full'}`}
+        className={`${sizeStyles} transition-all duration-700 ease-in-out relative z-10`}
         style={{
           backgroundImage: `url(${RABBIT_IMAGE_URL})`,
           backgroundSize: isInitial ? 'contain' : '300% 100%',
           backgroundPosition: bgPos,
-          backgroundRepeat: 'no-repeat'
+          backgroundRepeat: 'no-repeat',
+          filter: `drop-shadow(0 10px 20px rgba(0,0,0,0.5)) drop-shadow(0 0 5px ${themeColor}44)`
         }}
       >
-        {/* Holographic scanning effect */}
-        <div className="absolute inset-0 opacity-[0.15] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.4)_50%),linear-gradient(90deg,rgba(255,0,0,0.08),rgba(0,255,0,0.03),rgba(0,0,255,0.08))] bg-[length:100%_4px,4px_100%]" />
-        
-        {/* Subtle inner flare */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white/10 via-transparent to-transparent opacity-50" />
+        {/* ホログラム風の走査線（うっすら） */}
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.4)_50%)] bg-[length:100%_4px]" />
       </div>
-      
-      {/* 3. Outer Rim Light */}
-      <div className={`absolute inset-0 transition-all duration-1000 border-4 opacity-10 pointer-events-none z-20 ${isInitial ? 'rounded-[3rem]' : 'rounded-full'}`} 
-           style={{ borderColor: themeColor }} />
+
+      {/* 3. 足元の影と反射 */}
+      <div className="absolute -bottom-4 w-full flex justify-center pointer-events-none">
+        <div 
+          className="blur-xl opacity-30 transition-all duration-1000"
+          style={{ 
+            backgroundColor: themeColor, 
+            width: isInitial ? '80%' : '40%', 
+            height: '20px',
+            borderRadius: '50%'
+          }} 
+        />
+      </div>
     </div>
   );
 };

@@ -46,27 +46,26 @@ export const HoloBubble: React.FC<HoloBubbleProps> = ({ message, isLatest }) => 
   return (
     <div className={`
       flex flex-col transition-all duration-1000
-      ${isLatest ? 'translate-x-0 opacity-100' : 'translate-x-[-20px] opacity-30'}
+      ${isLatest ? 'translate-x-0 opacity-100' : 'translate-x-[-20px] opacity-30 blur-[1px]'}
       ${isModel ? 'items-start' : 'items-end'}
-      w-full mb-10
+      w-full mb-8
     `}>
-      {/* Dynamic Name Tag */}
-      <div className={`mb-2 flex items-center gap-3 ${isModel ? 'ml-3' : 'mr-3 opacity-60'}`}>
+      <div className={`mb-1.5 flex items-center gap-2 ${isModel ? 'ml-3' : 'mr-3 opacity-60'}`}>
         {isModel && <div className={`w-2 h-2 rounded-full ${charInfo?.color || 'bg-cyan-400'} shadow-[0_0_8px_currentColor]`} />}
-        <span className="text-[11px] uppercase tracking-[0.3em] text-white font-bold opacity-60">
-          {isModel ? (charInfo?.name || 'SYSTEM') : 'KID'}
+        <span className="text-[10px] uppercase tracking-widest text-white/60 font-bold">
+          {isModel ? (charInfo?.name || 'USAKKO BROTHERS') : 'YOU'}
         </span>
       </div>
 
       <div className={`
-        glass p-5 rounded-3xl relative max-w-full md:max-w-[100%] shadow-[0_20px_50px_rgba(0,0,0,0.5)]
-        backdrop-blur-xl border border-white/5
+        glass p-5 rounded-[2rem] relative max-w-[90%] md:max-w-full shadow-2xl
+        backdrop-blur-xl border border-white/10
         ${isModel 
-          ? 'rounded-tl-none bg-gradient-to-br from-white/[0.08] to-transparent text-left' 
-          : 'rounded-tr-none bg-gradient-to-bl from-cyan-500/[0.1] to-transparent text-right'}
+          ? 'rounded-tl-none bg-white/[0.08] text-left' 
+          : 'rounded-tr-none bg-blue-500/[0.15] text-right ml-auto'}
       `}>
-        {/* Holographic scanned lines overlay */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.05] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.3)_50%),linear-gradient(90deg,rgba(255,255,255,0.05),rgba(0,0,0,0),rgba(255,255,255,0.05))] bg-[length:100%_4px,4px_100%] rounded-3xl" />
+        {/* 装飾用走査線（うっすら） */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.3)_50%)] bg-[length:100%_4px] rounded-[2rem]" />
         
         {renderContent()}
         

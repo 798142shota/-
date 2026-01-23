@@ -2,7 +2,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { AppMode } from "./types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// APIキーの取得とクライアントの初期化を安全に行う
+const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("APIキーが設定されていません。");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const BASE_CHARACTER_TRAITS = `
 あなたは小学校5年生の社会科をサポートするAIキャラクターです。
@@ -31,7 +38,6 @@ ${BASE_CHARACTER_TRAITS}
 【目的】授業内容を思い出す練習。
 【ルール】
 ・社会科の学習内容について聞かれたら、説明せずに必ず「フラッシュカード」や「選択問題」を出して、子どもに思い出させてください。
-・フラッシュカードの裏には、ヒントや重要なポイントを短く書きます。
 `;
 
 const IDEA_SYSTEM_PROMPT = `
@@ -57,14 +63,19 @@ export async function generateResponse(mode: AppMode, input: string) {
     default: systemInstruction = INITIAL_SYSTEM_PROMPT; break;
   }
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: [{ parts: [{ text: input }] }],
-    config: {
-      systemInstruction,
-      temperature: 0.8,
-    },
-  });
-
-  return response.text;
+  try {
+    const ai = getAIClient();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ parts: [{ text: input }] }],
+      config: {
+        systemInstruction,
+        temperature: 0.8,
+      },
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    return "ごめんね、いまちょっとお話しできないみたい。あとでもう一度話しかけてくれるかな？";
+  }
 }

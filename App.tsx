@@ -15,7 +15,7 @@ const App: React.FC = () => {
 
   const initialGreeting = `こんにちは！ボクたちは「うさっこ三兄弟」だよ。
 社会科の勉強、いっしょにがんばろうね。
-まずは、どのモードで遊びたいか教えて！
+まずは、どのモードで遊びたいか番号で教えて！
 
 ① ふりかえりモード
 ② 特訓モード
@@ -65,7 +65,7 @@ const App: React.FC = () => {
       const aiResponse = await generateResponse(currentMode, userText);
       setMessages(prev => [...prev, { role: 'model', text: aiResponse, mode: currentMode }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: 'ごめん、ちょっと調子が悪いみたい。もう一回送ってくれる？', mode: AppMode.INITIAL }]);
+      setMessages(prev => [...prev, { role: 'model', text: 'ごめんね、うまくお返事できなかったよ。もう一度言ってみてくれる？', mode: AppMode.INITIAL }]);
     } finally {
       setIsLoading(false);
     }
@@ -75,23 +75,25 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen w-full flex flex-col bg-[#05050a] relative overflow-hidden font-sans">
-      {/* 舞台背景 */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,#1e1e3f_0%,#05050a_100%)] pointer-events-none" />
-      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle at 50% 50%, ${themeHex} 0%, transparent 70%)` }} />
+      {/* 舞台背景：光の演出 */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,#1a1a3a_0%,#05050a_100%)] pointer-events-none" />
+      <div className="absolute inset-0 opacity-20 pointer-events-none transition-all duration-1000" style={{ backgroundImage: `radial-gradient(circle at 50% 50%, ${themeHex}44 0%, transparent 70%)` }} />
       <div className="scanline opacity-[0.05]" />
 
-      {/* ヘッダー */}
-      <header className="z-50 p-4 flex justify-between items-center relative pointer-events-none">
-        <div className="flex items-center gap-3 glass px-4 py-1.5 rounded-full border-white/5 pointer-events-auto">
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: themeHex }} />
-          <h1 className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-60">USAKKO STAGE V3</h1>
+      {/* ヘッダー：モード名を表示 */}
+      <header className="z-50 p-6 flex justify-between items-center relative pointer-events-none">
+        <div className="flex items-center gap-3 glass px-5 py-2 rounded-full border-white/10 pointer-events-auto">
+          <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: themeHex }} />
+          <h1 className="text-xs font-bold tracking-[0.4em] uppercase opacity-70">
+            {mode === AppMode.INITIAL ? 'SELECT MODE' : mode}
+          </h1>
         </div>
         {mode !== AppMode.INITIAL && (
           <button 
             onClick={() => { setMode(AppMode.INITIAL); setMessages([{role: 'model', text: initialGreeting, mode: AppMode.INITIAL}]); }}
-            className="glass text-[9px] px-4 py-1.5 rounded-full hover:bg-white/10 transition-all uppercase tracking-widest text-white/50 border-white/5 pointer-events-auto"
+            className="glass text-[10px] px-5 py-2 rounded-full hover:bg-white/10 transition-all uppercase tracking-widest text-white/60 border-white/10 pointer-events-auto shadow-lg"
           >
-            Switch Mode
+            ← Back to All
           </button>
         )}
       </header>
@@ -99,20 +101,16 @@ const App: React.FC = () => {
       {/* ステージエリア */}
       <div className="flex-1 relative flex flex-col">
         
-        {/* キャラクター層: 中央に配置 */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 transition-all duration-1000 overflow-visible">
-           <div className={`floating transform transition-all duration-1000 ${mode === AppMode.INITIAL ? 'scale-100 translate-y-0' : 'scale-110 md:scale-125 translate-y-[-20px] md:translate-x-[20%]'}`}>
+        {/* キャラクター層 */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 transition-all duration-1000">
+           <div className={`floating transform transition-all duration-1000 ${mode === AppMode.INITIAL ? 'scale-100' : 'scale-110 md:scale-125 md:translate-x-[20%]'}`}>
               <CharacterAvatar mode={mode} size="lg" />
            </div>
-           
-           {/* 床面の光 */}
-           <div className="absolute bottom-[20%] w-[300px] md:w-[600px] h-10 rounded-[50%] blur-[40px] opacity-20" style={{ backgroundColor: themeHex }} />
-           <div className="absolute bottom-[20.5%] w-[200px] md:w-[400px] h-4 border-t border-white/10 rounded-[50%] blur-[2px] opacity-10" />
         </div>
 
-        {/* 会話層: キャラクターと少し重なるように配置 */}
-        <main className="relative flex-1 z-20 overflow-y-auto px-6 md:px-12 pt-6 pb-24 scrollbar-hide">
-          <div className="max-w-md lg:max-w-lg space-y-4">
+        {/* 会話層 */}
+        <main className="relative flex-1 z-20 overflow-y-auto px-6 md:px-16 pt-8 pb-32 scrollbar-hide">
+          <div className="max-w-md lg:max-w-xl space-y-6">
             {messages.map((msg, i) => (
               <HoloBubble key={i} message={msg} isLatest={i === messages.length - 1} />
             ))}
@@ -122,9 +120,9 @@ const App: React.FC = () => {
       </div>
 
       {/* 入力パネル */}
-      <footer className="z-50 p-4 md:p-6 relative bg-gradient-to-t from-[#05050a] via-[#05050a]/80 to-transparent">
+      <footer className="z-50 p-6 relative bg-gradient-to-t from-[#05050a] via-[#05050a]/90 to-transparent">
         <div className="max-w-2xl mx-auto">
-          <div className="glass bg-black/60 border-white/10 rounded-[2rem] p-2 flex items-center gap-2 shadow-2xl overflow-hidden">
+          <div className="glass bg-white/5 border-white/10 rounded-[2.5rem] p-2 flex items-center gap-2 shadow-2xl overflow-hidden backdrop-blur-3xl">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -134,28 +132,31 @@ const App: React.FC = () => {
                   handleSend();
                 }
               }}
-              placeholder={mode === AppMode.INITIAL ? "何番にする？それともボクたちに挨拶してみて！" : "うさぎに話しかけてみてね..."}
-              className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none resize-none h-12 md:h-16 text-white placeholder-white/20 text-sm md:text-base py-3 px-4 scrollbar-hide"
+              placeholder={mode === AppMode.INITIAL ? "番号で選んでね！" : "うさぎに質問してみよう..."}
+              className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none resize-none h-14 md:h-20 text-white placeholder-white/20 text-base py-4 px-6 scrollbar-hide"
             />
             
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl transition-all shrink-0 flex items-center justify-center
+              className={`w-14 h-14 md:w-20 md:h-20 rounded-[2rem] transition-all shrink-0 flex items-center justify-center
                 ${!input.trim() || isLoading 
                   ? 'bg-white/5 text-white/10' 
-                  : 'bg-gradient-to-br from-blue-500 to-indigo-700 text-white hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/20'}
+                  : 'bg-gradient-to-br from-blue-400 to-blue-700 text-white hover:scale-105 active:scale-95 shadow-xl shadow-blue-500/30'}
               `}
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-6 h-6 border-3 border-white/20 border-t-white rounded-full animate-spin" />
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
                   <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
                 </svg>
               )}
             </button>
           </div>
+          <p className="text-center mt-4 text-[10px] uppercase tracking-widest text-white/20 font-bold">
+            Social Studies Support System // Unit 5.0
+          </p>
         </div>
       </footer>
     </div>

@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          # キャッシュを無効化することで lock ファイルがなくてもビルドできるように修正
       
       - name: Install dependencies
         run: npm install

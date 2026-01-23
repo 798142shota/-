@@ -12,18 +12,17 @@ interface CharacterAvatarProps {
 export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({ mode, size = 'md', className = '' }) => {
   const isInitial = mode === AppMode.INITIAL;
 
-  // サイズ定義
   const containerSize = {
     sm: isInitial ? 'w-48 h-24' : 'w-20 h-20',
     md: isInitial ? 'w-80 h-40' : 'w-48 h-48',
-    lg: isInitial ? 'w-[600px] h-[300px]' : 'w-96 h-96'
+    lg: isInitial ? 'w-[400px] h-[200px] md:w-[600px] md:h-[300px]' : 'w-64 h-64 md:w-96 h-96'
   }[size];
 
-  // 画像の切り出し位置 (0:左かんがろう, 50:中おもこ, 100:右やるきち)
+  // 0% (左:かんがろう), 50% (中:おもこ), 100% (右:やるきち)
   const bgPos = {
-    [AppMode.REFLECT]: '0% 50%',
-    [AppMode.TRAINING]: '50% 50%',
-    [AppMode.IDEA]: '100% 50%',
+    [AppMode.REFLECT]: '0% center',
+    [AppMode.TRAINING]: '50% center',
+    [AppMode.IDEA]: '100% center',
     [AppMode.INITIAL]: 'center center'
   }[mode];
 
@@ -33,42 +32,42 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({ mode, size = '
 
   return (
     <div className={`relative transition-all duration-1000 ease-in-out ${className} flex items-center justify-center`}>
-      {/* 1. キャラクターのオーラ（背景光） */}
+      {/* 1. キャラクターの背景光 */}
       <div 
-        className="absolute rounded-full opacity-10 blur-[100px] animate-pulse transition-all duration-1000"
+        className="absolute rounded-full opacity-20 blur-[60px] animate-pulse transition-all duration-1000"
         style={{ 
           backgroundColor: themeColor, 
-          width: '120%', 
+          width: '100%', 
           height: '100%',
-          transform: 'scale(1.5)'
+          transform: 'scale(1.2)'
         }}
       />
       
-      {/* 2. キャラクター本体 */}
+      {/* 2. キャラクター本体（四角く見えないように設定） */}
       <div 
         className={`${containerSize} transition-all duration-700 ease-in-out relative z-10`}
         style={{
           backgroundImage: `url(${RABBIT_IMAGE_URL})`,
-          // 全員表示のときはそのまま、1匹のときは3倍に拡大して位置を合わせる
-          backgroundSize: isInitial ? 'contain' : '300% auto',
+          backgroundSize: isInitial ? 'contain' : '300% 100%',
           backgroundPosition: bgPos,
           backgroundRepeat: 'no-repeat',
-          // 画像の形に沿った影（これがないとただの四角い画像に見えます）
-          filter: `drop-shadow(0 15px 30px rgba(0,0,0,0.6)) drop-shadow(0 0 10px ${themeColor}33)`
+          // 画像が不透明な背景を持っていても、影で形を浮き彫りにする
+          filter: `drop-shadow(0 15px 30px rgba(0,0,0,0.5))`,
+          backgroundColor: 'transparent' // 背景色を透明に強制
         }}
       >
-        {/* ホログラム風の走査線エフェクト */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(transparent_50%,black_50%)] bg-[length:100%_4px]" />
+        {/* ホログラムの縞々模様 */}
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[linear-gradient(rgba(0,0,0,0)_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px]" />
       </div>
 
-      {/* 3. 足元の設置感（反射光） */}
-      <div className="absolute -bottom-8 w-full flex justify-center pointer-events-none">
+      {/* 3. 足元の影 */}
+      <div className="absolute -bottom-6 w-full flex justify-center opacity-30">
         <div 
-          className="blur-2xl opacity-40 transition-all duration-1000"
+          className="blur-xl transition-all duration-1000"
           style={{ 
             backgroundColor: themeColor, 
-            width: isInitial ? '80%' : '40%', 
-            height: '24px',
+            width: isInitial ? '80%' : '50%', 
+            height: '15px',
             borderRadius: '50%'
           }} 
         />

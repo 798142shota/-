@@ -15,7 +15,8 @@ const BASE_CHARACTER_TRAITS = `あなたは小学校5年生の社会科を全力
 ・音声合成が聞き取りやすいよう、適度に読点（、）を入れてください。`;
 
 export async function generateResponse(mode: AppMode, input: string) {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  // Always initialize with process.env.API_KEY directly.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const systemInstructions: Record<AppMode, string> = {
     [AppMode.REFLECT]: `${BASE_CHARACTER_TRAITS} 名前は「かんがろう」です。ふりかえりを助けます。「昔の農作業は手作業で10時間かかったけど、今はトラクターで1時間だよ。この浮いた時間で農家の人は何をしてると思う？」のように具体的な変化を提案して！`,
@@ -40,7 +41,8 @@ export async function generateResponse(mode: AppMode, input: string) {
 }
 
 export async function speakText(text: string) {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  // Always initialize with process.env.API_KEY directly.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
@@ -57,7 +59,8 @@ export async function speakText(text: string) {
 
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (base64Audio) {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+      // Correctly handle audio context without casting by using webkitAudioContext from global.d.ts.
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
       const audioBuffer = await decodeAudioData(decodeBase64(base64Audio), audioContext, 24000, 1);
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;

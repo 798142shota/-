@@ -11,21 +11,18 @@
     <style>
       body {
         font-family: 'Zen Maru Gothic', serif;
-        background: #e0f2fe; /* 明るいパステルブルー */
+        background: #fffdf0; /* ポップな薄い黄色 */
         color: #334155;
         overflow: hidden;
         height: 100vh;
         margin: 0;
       }
       .floating {
-        animation: float 4s ease-in-out infinite;
+        animation: float 3s ease-in-out infinite;
       }
       @keyframes float {
-        0%, 100% { transform: translateY(0px) rotate(0deg); }
-        50% { transform: translateY(-15px) rotate(1.5deg); }
-      }
-      .pop-shadow {
-        box-shadow: 0 10px 0px 0px rgba(0, 0, 0, 0.05);
+        0%, 100% { transform: translateY(0px) rotate(-1deg); }
+        50% { transform: translateY(-20px) rotate(1deg); }
       }
       .scrollbar-hide::-webkit-scrollbar {
         display: none;
@@ -34,13 +31,9 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
-      /* ふわふわした雲のような背景 */
-      .bg-clouds {
-        background-color: #e0f2fe;
-        background-image: radial-gradient(#ffffff 20%, transparent 20%),
-                          radial-gradient(#ffffff 20%, transparent 20%);
-        background-position: 0 0, 50px 50px;
-        background-size: 100px 100px;
+      .bg-pop {
+        background: radial-gradient(circle at 20% 20%, #e0f2fe 0%, transparent 40%),
+                    radial-gradient(circle at 80% 80%, #ffedf9 0%, transparent 40%);
       }
     </style>
   <script type="importmap">
@@ -56,8 +49,8 @@
 }
 </script>
 </head>
-  <body class="bg-clouds">
+  <body class="bg-pop">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

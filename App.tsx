@@ -1,30 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AppMode, Message } from './types';
-import { CHARACTERS } from './constants';
+import { CHARACTERS, RABBIT_IMAGE_URL } from './constants';
 import { CharacterAvatar } from './components/CharacterAvatar';
 import { HoloBubble } from './components/HoloBubble';
-import { generateResponse } from './geminiService';
+import { generateResponse, speakText } from './geminiService';
+import { GoogleGenAI } from "@google/genai";
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.INITIAL);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const initialGreeting = `ヤッホー！ボクたちは「うさぎ三兄弟」だよ！
-社会科の勉強を、ボクたちがドンドン盛り上げていくね！
+  const initialGreeting = `ヤッホー！ボクたちは社会科サポーター「うさぎ三兄弟」だよ！🐰✨
+君の社会科の学びがもっと面白くなるように、ドンドン提案していくね！
 
-何をしたいか選んで、番号で教えて！
+どのうさぎと話してみたい？番号か名前で教えてね！
 
-①【かんがろう】と「ふりかえり」をする
-（今の考えと前の考えを比べて、新しい発見を提案するよ！）
-
-②【おもこ】と「知識の特訓」をする
-（教科書の大事な言葉や、面白い豆知識をクイズにするよ！）
-
-③【やるきち】と「アイデア出し」をする
-（農家の人や外国の人など、いろんな人の立場を提案するよ！）`;
+① かんがろう（ふりかえり・比較）
+② おもこ（特訓・キーワード）
+③ やるきち（視点・アイデア）`;
 
   useEffect(() => {
     setMessages([{ role: 'model', text: initialGreeting, mode: AppMode.INITIAL }]);
@@ -36,9 +34,9 @@ const App: React.FC = () => {
 
   const detectMode = (text: string): AppMode | null => {
     const t = text.toLowerCase();
-    if (t.includes('1') || t.includes('①') || t.includes('ふりかえり') || t.includes('かんがろう')) return AppMode.REFLECT;
-    if (t.includes('2') || t.includes('②') || t.includes('特訓') || t.includes('おもこ')) return AppMode.TRAINING;
-    if (t.includes('3') || t.includes('③') || t.includes('アイデア') || t.includes('やるきち')) return AppMode.IDEA;
+    if (t.includes('1') || t.includes('①') || t.includes('かんがろう')) return AppMode.REFLECT;
+    if (t.includes('2') || t.includes('②') || t.includes('おもこ')) return AppMode.TRAINING;
+    if (t.includes('3') || t.includes('③') || t.includes('やるきち')) return AppMode.IDEA;
     return null;
   };
 
@@ -52,107 +50,173 @@ const App: React.FC = () => {
 
     try {
       const detected = detectMode(userText);
-      let currentMode = mode;
-
-      if (detected && (userText.length < 15 || mode === AppMode.INITIAL)) {
+      if (detected && mode === AppMode.INITIAL) {
         setMode(detected);
-        currentMode = detected;
         const char = CHARACTERS[detected];
-        const transitionMsg = `「${char.name}」に任せて！\n${char.description}\nさっそくだけど、今日は社会科のどんなことを調べてるの？`;
-        setMessages(prev => [...prev, { 
-          role: 'model', 
-          text: transitionMsg, 
-          mode: detected 
-        }]);
+        const msg = `「${char.name}」だよ！任せてね✨\n${char.description}\n今日はどんなことを勉強してるのかな？具体的に教えてくれたら、面白い提案をドンドンするよ！`;
+        setMessages(prev => [...prev, { role: 'model', text: msg, mode: detected }]);
+        speakText(msg);
         setIsLoading(false);
         return;
       }
 
-      const aiResponse = await generateResponse(currentMode, userText);
-      setMessages(prev => [...prev, { role: 'model', text: aiResponse, mode: currentMode }]);
+      const aiResponse = await generateResponse(mode, userText);
+      if (aiResponse) {
+        setMessages(prev => [...prev, { role: 'model', text: aiResponse, mode: mode }]);
+        speakText(aiResponse);
+      }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: 'ごめんね、電波が弱かったみたい。もう一度送ってくれるかな？', mode: AppMode.INITIAL }]);
+      setMessages(prev => [...prev, { role: 'model', text: '通信がうまくいかなかったみたい...もう一度送ってね！', mode: AppMode.INITIAL }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const themeHex = mode === AppMode.INITIAL ? '#ffffff' : mode === AppMode.REFLECT ? '#3b82f6' : mode === AppMode.TRAINING ? '#ec4899' : '#f97316';
+  const generateVeoVideo = async () => {
+    if (isVideoLoading) return;
+    setIsVideoLoading(true);
+    setVideoUrl(null);
+
+    try {
+      if (!window.aistudio?.hasSelectedApiKey()) {
+        await window.aistudio?.openSelectKey();
+      }
+
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+      
+      // 画像をBase64に変換（固定URLの画像を使用）
+      const imgResp = await fetch(RABBIT_IMAGE_URL);
+      const blob = await imgResp.blob();
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      const base64Data = await base64Promise;
+      const cleanBase64 = base64Data.split(',')[1];
+
+      let operation = await ai.models.generateVideos({
+        model: 'veo-3.1-fast-generate-preview',
+        prompt: 'Cute animated rabbits playing in a social studies classroom, bright colors, 3D style, friendly atmosphere.',
+        image: {
+          imageBytes: cleanBase64,
+          mimeType: 'image/png'
+        },
+        config: {
+          numberOfVideos: 1,
+          resolution: '720p',
+          aspectRatio: '16:9'
+        }
+      });
+
+      while (!operation.done) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        operation = await ai.operations.getVideosOperation({ operation: operation });
+      }
+
+      const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+      if (downloadLink) {
+        const videoResponse = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+        const videoBlob = await videoResponse.blob();
+        setVideoUrl(URL.createObjectURL(videoBlob));
+      }
+    } catch (error) {
+      console.error("Veo Error:", error);
+      alert("動画の生成中にエラーが起きました。APIキーを確認してください。");
+    } finally {
+      setIsVideoLoading(false);
+    }
+  };
+
+  const themeColor = mode === AppMode.INITIAL ? '#7dd3fc' : mode === AppMode.REFLECT ? '#60a5fa' : mode === AppMode.TRAINING ? '#f472b6' : '#fb923c';
 
   return (
-    <div className="h-screen w-full flex flex-col bg-[#05050a] relative overflow-hidden font-sans">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,#1a1a3a_0%,#05050a_100%)] pointer-events-none" />
-      <div className="absolute inset-0 opacity-20 pointer-events-none transition-all duration-1000" style={{ backgroundImage: `radial-gradient(circle at 50% 50%, ${themeHex}44 0%, transparent 70%)` }} />
-      <div className="scanline opacity-[0.05]" />
-
-      <header className="z-50 p-6 flex justify-between items-center relative pointer-events-none">
-        <div className="flex items-center gap-3 glass px-5 py-2 rounded-full border-white/10 pointer-events-auto">
-          <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: themeHex }} />
-          <h1 className="text-xs font-bold tracking-[0.4em] uppercase opacity-70">
-            {mode === AppMode.INITIAL ? 'SELECT MODE' : mode}
+    <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans bg-sky-50">
+      <header className="z-50 p-6 flex justify-between items-center bg-white/50 backdrop-blur-md border-b-2 border-white">
+        <div className="flex items-center gap-4 bg-white px-6 py-2 rounded-full shadow-lg border-2 border-blue-100">
+          <div className="w-4 h-4 rounded-full animate-bounce" style={{ backgroundColor: themeColor }} />
+          <h1 className="text-lg font-bold text-slate-700">
+            {mode === AppMode.INITIAL ? 'うさぎ三兄弟' : CHARACTERS[mode].name}
           </h1>
         </div>
-        {mode !== AppMode.INITIAL && (
+        
+        <div className="flex gap-2">
           <button 
-            onClick={() => { setMode(AppMode.INITIAL); setMessages([{role: 'model', text: initialGreeting, mode: AppMode.INITIAL}]); }}
-            className="glass text-[10px] px-5 py-2 rounded-full hover:bg-white/10 transition-all uppercase tracking-widest text-white/60 border-white/10 pointer-events-auto shadow-lg"
+            onClick={generateVeoVideo}
+            disabled={isVideoLoading}
+            className="bg-purple-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg hover:bg-purple-600 transition-all flex items-center gap-2"
           >
-            ← 三兄弟に戻る
+            {isVideoLoading ? '生成中...' : '🎬 動画にする'}
           </button>
-        )}
+          {mode !== AppMode.INITIAL && (
+            <button 
+              onClick={() => { setMode(AppMode.INITIAL); setMessages([{role: 'model', text: initialGreeting, mode: AppMode.INITIAL}]); }}
+              className="bg-white text-slate-500 text-xs font-bold px-6 py-2 rounded-full shadow-md border-2 border-slate-100"
+            >
+              ← もどる
+            </button>
+          )}
+        </div>
       </header>
 
-      <div className="flex-1 relative flex flex-col">
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 transition-all duration-1000">
-           <div className={`floating transform transition-all duration-1000 ${mode === AppMode.INITIAL ? 'scale-100' : 'scale-110 md:scale-125 md:translate-x-[25%]'}`}>
+      <div className="flex-1 relative flex flex-col md:flex-row">
+        {/* 左側：キャラクター */}
+        <div className="md:w-1/2 flex items-center justify-center p-8 transition-all duration-1000">
+           <div className={`floating transform ${mode === AppMode.INITIAL ? 'scale-100' : 'scale-110'}`}>
               <CharacterAvatar mode={mode} size="lg" />
+              {videoUrl && (
+                <div className="mt-8 rounded-2xl overflow-hidden shadow-2xl border-4 border-white w-full max-w-sm">
+                  <video src={videoUrl} controls autoPlay loop className="w-full" />
+                </div>
+              )}
            </div>
         </div>
 
-        <main className="relative flex-1 z-20 overflow-y-auto px-6 md:px-16 pt-8 pb-32 scrollbar-hide">
-          <div className="max-w-md lg:max-w-xl space-y-6">
+        {/* 右側：チャット */}
+        <main className="md:w-1/2 relative flex-1 z-20 overflow-y-auto px-6 pt-4 pb-40 scrollbar-hide">
+          <div className="max-w-md mx-auto space-y-6">
             {messages.map((msg, i) => (
-              <HoloBubble key={i} message={msg} isLatest={i === messages.length - 1} />
+              <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                <div className={`
+                  max-w-[90%] p-5 rounded-3xl shadow-lg border-4 transition-all
+                  ${msg.role === 'user' 
+                    ? 'bg-blue-400 border-white text-white rounded-tr-none' 
+                    : 'bg-white border-white text-slate-700 rounded-tl-none'}
+                `}>
+                  <p className="font-bold whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                  {msg.role === 'model' && (
+                    <button 
+                      onClick={() => speakText(msg.text)} 
+                      className="mt-2 text-xs bg-slate-100 px-3 py-1 rounded-full text-slate-500 hover:bg-slate-200"
+                    >
+                      🔊 読み上げる
+                    </button>
+                  )}
+                </div>
+              </div>
             ))}
-            <div ref={chatEndRef} className="h-20" />
+            <div ref={chatEndRef} className="h-10" />
           </div>
         </main>
       </div>
 
-      <footer className="z-50 p-6 relative bg-gradient-to-t from-[#05050a] via-[#05050a]/90 to-transparent">
-        <div className="max-w-2xl mx-auto">
-          <div className="glass bg-white/5 border-white/10 rounded-[2.5rem] p-2 flex items-center gap-2 shadow-2xl overflow-hidden backdrop-blur-3xl">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={mode === AppMode.INITIAL ? "やりたいことを番号で選んでね！" : "うさぎに話しかけてみて！"}
-              className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none resize-none h-14 md:h-20 text-white placeholder-white/20 text-base py-4 px-6 scrollbar-hide"
-            />
-            
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className={`w-14 h-14 md:w-20 md:h-20 rounded-[2rem] transition-all shrink-0 flex items-center justify-center
-                ${!input.trim() || isLoading 
-                  ? 'bg-white/5 text-white/10' 
-                  : 'bg-gradient-to-br from-blue-400 to-blue-700 text-white hover:scale-105 active:scale-95 shadow-xl shadow-blue-500/30'}
-              `}
-            >
-              {isLoading ? (
-                <div className="w-6 h-6 border-3 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
-                  <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-                </svg>
-              )}
-            </button>
-          </div>
+      <footer className="z-50 p-6 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-50 to-transparent">
+        <div className="max-w-3xl mx-auto flex gap-3 bg-white p-3 rounded-[3rem] shadow-2xl border-4 border-white">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            placeholder="社会科のことで教えてほしいことや、考えたことを書いてね！"
+            className="flex-1 bg-transparent border-none focus:ring-0 resize-none h-12 md:h-16 text-slate-700 py-3 px-4 font-bold"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || isLoading}
+            className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
+            style={{ backgroundColor: themeColor, color: 'white' }}
+          >
+            {isLoading ? <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" /> : '送信'}
+          </button>
         </div>
       </footer>
     </div>

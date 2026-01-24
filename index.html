@@ -11,8 +11,8 @@
     <style>
       body {
         font-family: 'Zen Maru Gothic', serif;
-        background: #05050a;
-        color: #fff;
+        background: #e0f2fe; /* 明るいパステルブルー */
+        color: #334155;
         overflow: hidden;
         height: 100vh;
         margin: 0;
@@ -22,28 +22,10 @@
       }
       @keyframes float {
         0%, 100% { transform: translateY(0px) rotate(0deg); }
-        50% { transform: translateY(-15px) rotate(1deg); }
+        50% { transform: translateY(-15px) rotate(1.5deg); }
       }
-      .glass {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .scanline {
-        width: 100%;
-        height: 100%;
-        z-index: 5;
-        background: linear-gradient(
-          to bottom,
-          transparent,
-          rgba(255, 255, 255, 0.02) 50%,
-          transparent 50%
-        );
-        background-size: 100% 4px;
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
+      .pop-shadow {
+        box-shadow: 0 10px 0px 0px rgba(0, 0, 0, 0.05);
       }
       .scrollbar-hide::-webkit-scrollbar {
         display: none;
@@ -51,6 +33,14 @@
       .scrollbar-hide {
         -ms-overflow-style: none;
         scrollbar-width: none;
+      }
+      /* ふわふわした雲のような背景 */
+      .bg-clouds {
+        background-color: #e0f2fe;
+        background-image: radial-gradient(#ffffff 20%, transparent 20%),
+                          radial-gradient(#ffffff 20%, transparent 20%);
+        background-position: 0 0, 50px 50px;
+        background-size: 100px 100px;
       }
     </style>
   <script type="importmap">
@@ -66,8 +56,8 @@
 }
 </script>
 </head>
-  <body>
+  <body class="bg-clouds">
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

@@ -1,5 +1,8 @@
 {
   "name": "社会科サポーターうさぎ",
-  "description": "小学校5年生の社会科の学びを支える、答えを教えない伴走型AIサポーターです。3匹のうさぎ「かんがろう」「おもこ」「やるきち」がそれぞれのモードで対話をサポートします。",
-  "requestFramePermissions": []
+  "description": "小学校5年生の社会科の学びを支える、提案型AIサポーター。3匹のうさぎ「かんがろう」「おもこ」「やるきち」が学習を盛り上げます。",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
 }

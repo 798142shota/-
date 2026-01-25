@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { AppMode, Message } from './types';
 import { CHARACTERS } from './constants';
@@ -12,14 +13,20 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const initialGreeting = `こんにちは！社会科の学習をいっしょに進めるメンバーだよ！✨
+  const initialGreeting = `こんにちは！社会科の学習をいっしょに進める「うさっこ三兄弟」だよ！✨
 今日はどんなことを調べているのかな？
 
 話してみたいメンバーの番号か名前を教えてね！
+「もどる」や「スタート」と書くと、いつでもこの画面にもどれるよ。
 
-① 【かんがろう】（これまでの学習をふりかえる）
-② 【おもこ】（大切な言葉をしっかり覚える）
-③ 【やるきち】（新しいアイデアや視点を見つける）`;
+① 【かんがろう】
+社会科の「見方・考え方」を使って、新しい視点を見つけるのを手伝うよ！
+
+② 【おもこ】
+大切な言葉をフラッシュカードで覚える特訓をしよう！
+
+③ 【やるきち】
+学習方法のアドバイスをして、もっと深く学べるようにサポートするよ！`;
 
   useEffect(() => {
     setMessages([{ role: 'model', text: initialGreeting, mode: AppMode.INITIAL }]);
@@ -31,9 +38,13 @@ const App: React.FC = () => {
 
   const detectMode = (text: string): AppMode | null => {
     const t = text.toLowerCase();
-    if (t.includes('1') || t.includes('①') || t.includes('かんがろう')) return AppMode.REFLECT;
+    // 戻るコマンド
+    if (t.includes('もどる') || t.includes('スタート')) return AppMode.INITIAL;
+    
+    // キャラクター選択
+    if (t.includes('1') || t.includes('①') || t.includes('かんがろう')) return AppMode.IDEA;
     if (t.includes('2') || t.includes('②') || t.includes('おもこ')) return AppMode.TRAINING;
-    if (t.includes('3') || t.includes('③') || t.includes('やるきち')) return AppMode.IDEA;
+    if (t.includes('3') || t.includes('③') || t.includes('やるきち')) return AppMode.REFLECT;
     return null;
   };
 
@@ -47,27 +58,40 @@ const App: React.FC = () => {
 
     try {
       const detected = detectMode(userText);
-      if (detected && (mode === AppMode.INITIAL || userText.length < 10)) {
+      
+      // トップに戻る処理
+      if (detected === AppMode.INITIAL && mode !== AppMode.INITIAL) {
+        setMode(AppMode.INITIAL);
+        setMessages(prev => [...prev, { role: 'model', text: initialGreeting, mode: AppMode.INITIAL }]);
+        setIsLoading(false);
+        return;
+      }
+
+      // キャラクター切り替え処理
+      if (detected && detected !== AppMode.INITIAL && (mode === AppMode.INITIAL || userText.length < 10)) {
         setMode(detected);
         const char = CHARACTERS[detected];
-        const msg = `${char.name}だよ！よろしくね✨\n${char.description}\n今日は社会科のどんな勉強をしているの？`;
+        const msg = `${char.name}だよ！よろしくね✨\n${char.description}\n今日はどんなことを考えているの？`;
         setMessages(prev => [...prev, { role: 'model', text: msg, mode: detected }]);
         setIsLoading(false);
         return;
       }
 
+      // 通常の対話
       const aiResponse = await generateResponse(mode, userText);
       if (aiResponse) {
         setMessages(prev => [...prev, { role: 'model', text: aiResponse, mode: mode }]);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: '通信エラーかな？もう一度教えてね！', mode: AppMode.INITIAL }]);
+      setMessages(prev => [...prev, { role: 'model', text: '通信エラーかな？もう一度送ってみてね！', mode: AppMode.INITIAL }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const themeColor = mode === AppMode.INITIAL ? '#fbbf24' : mode === AppMode.REFLECT ? '#60a5fa' : mode === AppMode.TRAINING ? '#f472b6' : '#fb923c';
+  const themeColor = mode === AppMode.INITIAL ? '#fbbf24' : 
+                     mode === AppMode.IDEA ? '#60a5fa' : 
+                     mode === AppMode.TRAINING ? '#f472b6' : '#fb923c';
 
   return (
     <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans bg-[#fffdf0]">
@@ -76,7 +100,7 @@ const App: React.FC = () => {
         <div className="flex items-center gap-3 md:gap-4 bg-white px-8 md:px-12 py-2 rounded-full shadow-md border-2 border-yellow-100">
           <div className="w-3 h-3 md:w-4 md:h-4 rounded-full animate-bounce" style={{ backgroundColor: themeColor }} />
           <h1 className="text-base md:text-xl font-black text-slate-700">
-            {mode === AppMode.INITIAL ? '社会科サポーター' : CHARACTERS[mode].name}
+            {mode === AppMode.INITIAL ? 'うさっこ三兄弟' : CHARACTERS[mode].name}
           </h1>
         </div>
       </header>

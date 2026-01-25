@@ -12,7 +12,10 @@ const BASE_CHARACTER_TRAITS = `あなたは小学校5年生の社会科をサポ
 ・読み上げやすいよう、適度に読点（、）を入れてください。`;
 
 export async function generateResponse(mode: AppMode, input: string) {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  if (!process.env.API_KEY) {
+    console.error("API_KEYが設定されていません。GitHubのSecretsを確認してください。");
+  }
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
   
   const systemInstructions: Record<AppMode, string> = {
     [AppMode.IDEA]: `${BASE_CHARACTER_TRAITS}
@@ -50,15 +53,15 @@ export async function generateResponse(mode: AppMode, input: string) {
     });
     return response.text;
   } catch (error) {
-    return "もう一度送ってみてね！";
+    console.error("Gemini API Error:", error);
+    return "もう一度送ってみてね！(APIキーが正しいか確認してね)";
   }
 }
 
 export async function speakText(text: string) {
-  // フラッシュカードの構文などは読み上げから除外する工夫
   const cleanText = text.replace(/【フラッシュカード】|①|②|③|表：|裏：/g, " ");
   
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",

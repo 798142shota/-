@@ -6,6 +6,7 @@ import { CharacterAvatar } from './components/CharacterAvatar';
 import { HoloBubble } from './components/HoloBubble';
 import { generateResponse } from './geminiService';
 
+// v1.0.1 - APIキー設定完了後の自動ビルド用
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.INITIAL);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -83,7 +84,7 @@ const App: React.FC = () => {
         setMessages(prev => [...prev, { role: 'model', text: aiResponse, mode: mode }]);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: '通信エラーかな？もう一度送ってみてね！', mode: AppMode.INITIAL }]);
+      setMessages(prev => [...prev, { role: 'model', text: '通信エラーかな？APIキーの設定を確認してみてね！', mode: AppMode.INITIAL }]);
     } finally {
       setIsLoading(false);
     }

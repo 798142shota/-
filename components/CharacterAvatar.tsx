@@ -11,76 +11,75 @@ interface CharacterAvatarProps {
 export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({ mode, size = 'md', className = '' }) => {
   const isInitial = mode === AppMode.INITIAL;
 
-  // コンテナのサイズ設定
   const containerSize = {
-    sm: isInitial ? 'w-32 h-20' : 'w-20 h-20',
-    md: isInitial ? 'w-64 h-36' : 'w-36 h-36',
-    lg: isInitial ? 'w-[320px] h-[200px] md:w-[600px] md:h-[360px]' : 'w-64 h-64 md:w-96 h-96'
+    sm: 'w-16 h-16',
+    md: 'w-32 h-32',
+    lg: isInitial ? 'w-[320px] h-[180px] md:w-[600px] md:h-[340px]' : 'w-64 h-64 md:w-96 h-96'
   }[size];
 
-  // 画像の表示位置制御 (左:かんがろう, 中:おもこ, 右:やるきち)
-  // transform: translateX で3匹並んだ画像から1匹分を切り出す
-  const translateValue = {
-    [AppMode.REFLECT]: '0%',      // 左
-    [AppMode.TRAINING]: '-33.33%', // 中央
-    [AppMode.IDEA]: '-66.66%',     // 右
-    [AppMode.INITIAL]: '0%'        // 全員
-  }[mode];
+  // キャラクターごとのX方向の移動量（%）
+  // 画像全体を300%の幅として扱い、左(0%)、中(-100%)、右(-200%)とスライドさせる
+  const offsets = {
+    [AppMode.REFLECT]: '0%',      // 左：かんがろう
+    [AppMode.TRAINING]: '-100%',  // 中：おもこ
+    [AppMode.IDEA]: '-200%',      // 右：やるきち
+    [AppMode.INITIAL]: '0%'       // 全体表示用
+  };
 
-  const themeColor = isInitial ? '#fbbf24' : 
+  const auraColor = isInitial ? '#fbbf24' : 
     mode === AppMode.REFLECT ? '#60a5fa' : 
     mode === AppMode.TRAINING ? '#f472b6' : '#fb923c';
 
   return (
     <div className={`relative transition-all duration-700 ease-in-out ${className} flex items-center justify-center`}>
-      {/* 柔らかな背景の光 */}
+      {/* 背後のオーラ */}
       <div 
-        className="absolute rounded-full opacity-40 blur-[50px] animate-pulse"
+        className="absolute rounded-full opacity-40 blur-[40px] md:blur-[60px] animate-pulse transition-all duration-1000"
         style={{ 
-          backgroundColor: themeColor, 
+          backgroundColor: auraColor, 
           width: '100%', 
           height: isInitial ? '60%' : '100%',
+          transform: 'scale(1.2)'
         }}
       />
       
-      {/* キャラクター画像本体 */}
-      <div className={`${containerSize} relative z-10 overflow-hidden rounded-3xl flex items-center justify-center`}>
+      {/* 画像コンテナ */}
+      <div className={`${containerSize} relative z-10 flex items-center justify-center overflow-hidden rounded-[2rem] md:rounded-[3rem]`}>
         <div 
-          className="h-full transition-transform duration-500 ease-out flex"
-          style={{ 
-            width: isInitial ? '100%' : '300%',
-            transform: isInitial ? 'none' : `translateX(${translateValue})`
+          className="relative w-full h-full transition-all duration-500 ease-in-out"
+          style={{
+            // 初期状態は全体を表示、選択後はそのキャラだけを表示
+            width: isInitial ? '100%' : '300%', 
+            transform: isInitial ? 'none' : `translateX(${offsets[mode]})`
           }}
         >
           <img 
             src={RABBIT_IMAGE_URL} 
-            alt="うさぎサポーター"
-            className="h-full w-full object-contain pointer-events-none select-none"
+            alt="サポーター"
+            crossOrigin="anonymous"
+            className="absolute top-0 left-0 w-full h-full select-none pointer-events-none"
             style={{ 
-              minWidth: isInitial ? '100%' : '33.33%',
+              objectFit: isInitial ? 'contain' : 'cover',
             }}
+            loading="eager"
           />
-          {!isInitial && (
-            <>
-              <img src={RABBIT_IMAGE_URL} className="h-full min-width-[33.33%] object-contain opacity-0" />
-              <img src={RABBIT_IMAGE_URL} className="h-full min-width-[33.33%] object-contain opacity-0" />
-            </>
-          )}
         </div>
       </div>
 
       {/* 影 */}
-      <div className="absolute -bottom-8 w-full flex justify-center opacity-30">
-        <div 
-          className="blur-xl"
-          style={{ 
-            backgroundColor: '#000', 
-            width: isInitial ? '80%' : '40%', 
-            height: '15px',
-            borderRadius: '50%'
-          }} 
-        />
-      </div>
+      {!isInitial && (
+        <div className="absolute -bottom-6 w-full flex justify-center opacity-20">
+          <div 
+            className="blur-xl transition-all duration-1000"
+            style={{ 
+              backgroundColor: '#000', 
+              width: '40%', 
+              height: '10px',
+              borderRadius: '50%'
+            }} 
+          />
+        </div>
+      )}
     </div>
   );
 };

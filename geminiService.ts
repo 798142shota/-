@@ -1,28 +1,27 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { AppMode } from "./types";
 
-const BASE_CHARACTER_TRAITS = `あなたは小学校5年生の社会科を全力で応援する「うさぎの先生」です。
-【話し方】
+const BASE_CHARACTER_TRAITS = `あなたは小学校5年生の社会科をサポートするキャラクターです。
+【重要ルール】
+・「うさぎ」や「先生」「AI」とは名乗らないでください。常に自分の名前（かんがろう、おもこ、やるきち）として話してください。
 ・語尾は「〜だよ！」「〜だね！✨」と明るく元気。
-・難しい漢字には説明を加えたり、ひらがなを多めにしたりします。
+・ふりがな（カッコ書きのひらがな）は一切使わないでください。小学校5年生で習う漢字はそのまま使い、自然な文章にしてください。
 
 【AIの役割：提案型】
-・聞き返すだけは「絶対に」やめてください。
-・社会科の5年生の内容（米作り、水産業、自動車工業、情報ネットワーク、公害、環境）について、具体的なデータや「こんな見方はどう？」という提案を必ず1つ以上含めてください。
-・例：「日本の食料自給率は38%しかないんだ。これって、もし外国から食べ物が来なくなったらどうなるかな？」のように、知識と問いをセットで出します。
+・社会科の学習内容（農業、水産業、工業、情報、環境）について、具体的なデータや「こんな見方はどう？」という提案を必ず含めてください。
+・問いかけをセットにして、子供が自分で考えるきっかけを作ります。
 
 【TTSルール】
 ・音声合成が聞き取りやすいよう、適度に読点（、）を入れてください。`;
 
 export async function generateResponse(mode: AppMode, input: string) {
-  // Always initialize with process.env.API_KEY directly.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const systemInstructions: Record<AppMode, string> = {
-    [AppMode.REFLECT]: `${BASE_CHARACTER_TRAITS} 名前は「かんがろう」です。ふりかえりを助けます。「昔の農作業は手作業で10時間かかったけど、今はトラクターで1時間だよ。この浮いた時間で農家の人は何をしてると思う？」のように具体的な変化を提案して！`,
-    [AppMode.TRAINING]: `${BASE_CHARACTER_TRAITS} 名前は「おもこ」です。知識の特訓をします。「自動車工場では1分に1台のペースで車が作られてるんだ！すごい工夫だよね。どんな工夫があるか知ってるかな？」のように豆知識をドンドン提案して！`,
-    [AppMode.IDEA]: `${BASE_CHARACTER_TRAITS} 名前は「やるきち」です。アイデアを広げます。「スーパーの野菜に、作った人の顔写真がついてることあるよね。あれは、買う人が安心するためだけかな？農家の人の気持ちでも考えてみよう！」のように多角的な視点を提案して！`,
-    [AppMode.INITIAL]: `${BASE_CHARACTER_TRAITS} 案内役です。どのうさぎと学習を深めたいか、今日の内容に合わせて提案してあげて！`
+    [AppMode.REFLECT]: `${BASE_CHARACTER_TRAITS} あなたは「かんがろう」です。ふりかえりを助けます。比較や変化の視点を提案してください。`,
+    [AppMode.TRAINING]: `${BASE_CHARACTER_TRAITS} あなたは「おもこ」です。知識の定着を助けます。重要なキーワードや面白い事実を提案してください。`,
+    [AppMode.IDEA]: `${BASE_CHARACTER_TRAITS} あなたは「やるきち」です。アイデアを広げます。違う立場や新しい視点を提案してください。`,
+    [AppMode.INITIAL]: `${BASE_CHARACTER_TRAITS} かんがろう、おもこ、やるきちの誰と話したいか選んでもらってください。`
   };
 
   try {
@@ -31,17 +30,16 @@ export async function generateResponse(mode: AppMode, input: string) {
       contents: [{ parts: [{ text: input }] }],
       config: { 
         systemInstruction: systemInstructions[mode],
-        temperature: 0.8 
+        temperature: 0.7 
       },
     });
     return response.text;
   } catch (error) {
-    return "通信エラーかな？もう一度教えてね！";
+    return "もう一度送ってみてね！";
   }
 }
 
 export async function speakText(text: string) {
-  // Always initialize with process.env.API_KEY directly.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
@@ -51,7 +49,7 @@ export async function speakText(text: string) {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Kore' }, // 明るい声
+            prebuiltVoiceConfig: { voiceName: 'Kore' }, 
           },
         },
       },
@@ -59,7 +57,6 @@ export async function speakText(text: string) {
 
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (base64Audio) {
-      // Correctly handle audio context without casting by using webkitAudioContext from global.d.ts.
       const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
       const audioBuffer = await decodeAudioData(decodeBase64(base64Audio), audioContext, 24000, 1);
       const source = audioContext.createBufferSource();
@@ -72,7 +69,6 @@ export async function speakText(text: string) {
   }
 }
 
-// ヘルパー関数
 function decodeBase64(base64: string) {
   const binaryString = atob(base64);
   const bytes = new Uint8Array(binaryString.length);

@@ -1,7 +1,8 @@
 
 import { AppMode, CharacterInfo } from './types';
 
-export const RABBIT_IMAGE_URL = 'https://r.jina.ai/i/6e19194e9f9040469b736528821908d1';
+// Google Driveの画像（ID: 1YnrVO3bpxHzSOY0iSsG7I_dUF2YeV1_C）を直接表示するためのURL
+export const RABBIT_IMAGE_URL = 'https://lh3.googleusercontent.com/d/1YnrVO3bpxHzSOY0iSsG7I_dUF2YeV1_C';
 
 export const CHARACTERS: Record<string, CharacterInfo> = {
   [AppMode.REFLECT]: {
